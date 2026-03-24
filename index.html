@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Picker Pro - Pallets</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg: #000000;
+            --card: #1c1c1e;
+            --text: #ffffff;
+            --accent: #0a84ff;
+            --warning: #ffd60a;
+            --undo-bg: #323232;
+        }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px 10px 80px 10px; /* Espacio extra abajo para el botón */
+            overscroll-behavior: none;
+        }
+        h2 { text-align: center; font-size: 1.2rem; color: var(--accent); margin: 10px 0; }
+        #stats { text-align: center; font-size: 0.9rem; margin-bottom: 15px; opacity: 0.7; }
+        
+        .list-container { display: flex; flex-direction: column; gap: 8px; }
+        
+        .pallet-card {
+            background-color: var(--card);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .pallet-card:active { transform: scale(0.95); background-color: #2c2c2e; }
+        
+        .info { display: flex; flex-direction: column; }
+        .loc { font-weight: bold; font-size: 1.2rem; color: var(--warning); }
+        .lpn { font-family: monospace; font-size: 0.8rem; opacity: 0.6; margin-top: 4px; }
+        
+        .check { color: var(--accent); font-weight: bold; font-size: 1.2rem; }
+
+        /* Botón Deshacer Flotante */
+        #undo-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--undo-bg);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: none; /* Oculto por defecto */
+            z-index: 100;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { bottom: -50px; } to { bottom: 20px; } }
+
+        @media (max-width: 300px) {
+            .loc { font-size: 1rem; }
+            #undo-btn { width: 80%; padding: 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>📦 Picking Rack</h2>
+    <div id="stats">Pendientes: <span id="count">0</span></div>
+    
+    <div id="pallet-list" class="list-container"></div>
+
+    <button id="undo-btn" onclick="undoDelete()">↩︎ Deshacer cambio</button>
+
+    <script>
+        let pallets = [
+            { lpn: "LEC0000000112L", loc: "AN16C001" },
+            { lpn: "LEC0000000112O", loc: "AO37B002" },
+            { lpn: "LEC0000000112Q", loc: "AO37B001" },
+            { lpn: "LEC0000000112S", loc: "AO37B003" },
+            { lpn: "LEC0000000112V", loc: "AN14F003" },
+            { lpn: "LEC0000000112Y", loc: "AQ15C003" },
+            { lpn: "LEC00000001131", loc: "AN16D001" },
+            { lpn: "LEC00000001134", loc: "AQ15B002" },
+            { lpn: "LEC00000001137", loc: "AO37A003" },
+            { lpn: "LEC00000001139", loc: "AQ13D001" },
+            { lpn: "LEC0000000113C", loc: "AQ11D002" },
+            { lpn: "LEC0000000113E", loc: "AQ11C002" },
+            { lpn: "LEC0000000113F", loc: "AN12F002" },
+            { lpn: "LEC0000000113G", loc: "AQ11D003" },
+            { lpn: "LEC0000000113H", loc: "AQ13F001" },
+            { lpn: "LEC0000000113I", loc: "AQ13C001" },
+            { lpn: "LEC0000000113J", loc: "AQ13F003" },
+            { lpn: "LEC0000000113K", loc: "AQ13F002" },
+            { lpn: "LEC0000000113L", loc: "AQ13B003" },
+            { lpn: "LEC0000000113M", loc: "AN12F003" },
+            { lpn: "LEC0000000113N", loc: "AN14F002" },
+            { lpn: "LEC0000000113O", loc: "AN14F001" },
+            { lpn: "LEC0000000113P", loc: "AQ11F001" },
+            { lpn: "LEC0000000113V", loc: "AQ11F002" },
+            { lpn: "LEC0000000113X", loc: "AQ11A003" },
+            { lpn: "LEC0000000113Z", loc: "AP29D001" }
+        ];
+
+        // Ordenar inicialmente
+        pallets.sort((a, b) => a.loc.localeCompare(b.loc));
+
+        let lastDeleted = null;
+        const container = document.getElementById('pallet-list');
+        const countSpan = document.getElementById('count');
+        const undoBtn = document.getElementById('undo-btn');
+
+        function render() {
+            container.innerHTML = '';
+            countSpan.innerText = pallets.length;
+            
+            if (pallets.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:40px; color:#4cd964;">🏁 ¡Ruta completada!</p>';
+            }
+
+            pallets.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'pallet-card';
+                card.innerHTML = `
+                    <div class="info">
+                        <span class="loc">${item.loc}</span>
+                        <span class="lpn">${item.lpn}</span>
+                    </div>
+                    <div class="check">✓</div>
+                `;
+                card.onclick = () => deletePallet(index);
+                container.appendChild(card);
+            });
+        }
+
+        function deletePallet(index) {
+            lastDeleted = { data: pallets[index], index: index };
+            pallets.splice(index, 1);
+            
+            // Mostrar botón deshacer
+            undoBtn.style.display = 'block';
+            
+            render();
+
+            // Ocultar botón deshacer tras 8 segundos para no estorbar
+            setTimeout(() => { undoBtn.style.display = 'none'; }, 8000);
+        }
+
+        function undoDelete() {
+            if (lastDeleted) {
+                pallets.splice(lastDeleted.index, 0, lastDeleted.data);
+                lastDeleted = null;
+                undoBtn.style.display = 'none';
+                render();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
