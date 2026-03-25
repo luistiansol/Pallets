@@ -3,54 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Pro Cloud Sync</title>
+    <title>Picker Pro - Clean Edition</title>
+    <meta name="mobile-web-app-capable" content="yes">
     <style>
         :root {
-            --bg: #000000; --card: #1c1c1e; --text: #ffffff;
-            --accent: #0a84ff; --warning: #ffd60a; --success: #30d158;
+            --bg: #000000;
+            --card: #1c1c1e;
+            --text: #ffffff;
+            --accent: #0a84ff;
+            --warning: #ffd60a;
+            --success: #30d158;
+            --undo: #ff453a;
+            --progress-bg: #333;
             --navy: #002d72;
         }
         body { 
-            font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text);
-            margin: 0; padding: 10px 10px 150px 10px; overscroll-behavior: none;
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0 10px 100px 10px;
+            overscroll-behavior: none;
         }
-        .header { position: sticky; top: 0; background: var(--bg); padding: 10px 0; border-bottom: 1px solid #333; z-index: 100; }
-        .progress-container { width: 100%; height: 12px; background: #333; border-radius: 6px; margin: 10px 0; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); transition: 0.5s; }
+        .header { 
+            position: sticky; 
+            top: 0; 
+            background: var(--bg); 
+            padding: 15px 0 10px 0;
+            border-bottom: 1px solid #333;
+            z-index: 100;
+        }
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: var(--progress-bg);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--success);
+            transition: width 0.4s ease;
+        }
         h2 { margin: 0; font-size: 1.1rem; text-align: center; color: var(--accent); }
-        #stats { text-align: center; font-size: 1rem; font-weight: bold; }
-        .pallet-card {
-            background: var(--card); border: 1px solid #333; border-radius: 12px;
-            padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        #stats { text-align: center; font-size: 1rem; margin-top: 5px; font-weight: bold; }
+        
+        /* Contenedor de Last Action y Undo unidos */
+        .action-bar {
+            background: #1a1a1a;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
         }
-        .loc { font-weight: bold; font-size: 1.2rem; color: var(--warning); }
-        .lpn { font-family: monospace; font-size: 0.8rem; opacity: 0.6; }
-        .controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; display: flex; flex-direction: column; gap: 8px; }
-        button { padding: 15px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; }
-        #download-btn { background: var(--navy); color: white; display: none; }
-        #reset-btn { background: #ff3b30; color: white; font-size: 0.7rem; opacity: 0.7; }
+        #last-text { color: var(--success); font-weight: bold; }
+        #undo-btn { 
+            color: var(--undo); 
+            background: none; 
+            border: none; 
+            font-size: 0.9rem; 
+            font-weight: bold; 
+            padding: 0;
+            display: none;
+            cursor: pointer;
+        }
+
+        .list-container { display: flex; flex-direction: column; gap: 8px; }
+        .pallet-card {
+            background-color: var(--card);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .loc { font-weight: bold; font-size: 1.3rem; color: var(--warning); }
+        .lpn { font-family: monospace; font-size: 0.85rem; opacity: 0.6; margin-top: 4px; }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            z-index: 100;
+        }
+        #download-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 30px;
+            border: none;
+            background: var(--navy);
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>🔄 Sync Picker Pro</h2>
+        <h2>📦 Picker Helper</h2>
         <div class="progress-container"><div id="progress-bar"></div></div>
-        <div id="stats">Pendientes: <span id="count">0</span></div>
+        <div id="stats">Pending: <span id="count">0</span></div>
+        <div class="action-bar">
+            <span>Last: <span id="last-text">None</span></span>
+            <button id="undo-btn" onclick="undoDelete()">UNDO</button>
+        </div>
     </div>
 
-    <div id="pallet-list"></div>
+    <div id="pallet-list" class="list-container"></div>
 
     <div class="controls">
-        <button id="download-btn" onclick="generateReport()">💾 GUARDAR REPORTE FINAL</button>
-        <button id="reset-btn" onclick="resetSync()">⚠️ NUEVA LISTA (BORRAR TODO)</button>
+        <button id="download-btn" onclick="generateReport()">💾 SAVE FINAL REPORT</button>
     </div>
 
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // LISTA MAESTRA
-        const masterList = [
+        // DATOS DE LA IMAGEN
+        let pallets = [
             { lpn: "LEC000000011JK", loc: "AN24F003" }, { lpn: "LEC000000011JU", loc: "AN26B003" },
             { lpn: "LEC000000011JS", loc: "AN26C001" }, { lpn: "LEC000000011JV", loc: "AN26F002" },
             { lpn: "LEC000000011JR", loc: "AQ25B002" }, { lpn: "LEC000000011JN", loc: "AQ25D001" },
@@ -62,60 +142,62 @@
             { lpn: "LEC000000011JW", loc: "AR65C003" }, { lpn: "LEC000000011JO", loc: "AR67D003" }
         ].sort((a, b) => a.loc.localeCompare(b.loc));
 
-        const KEY = 'B_BURG_JOB';
-        let state = JSON.parse(localStorage.getItem(KEY)) || { done: [] };
+        const totalInitial = pallets.length;
+        let workedPallets = []; 
+        let lastDeleted = null;
+
+        const listDiv = document.getElementById('pallet-list');
+        const countSpan = document.getElementById('count');
+        const lastText = document.getElementById('last-text');
+        const undoBtn = document.getElementById('undo-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const progressBar = document.getElementById('progress-bar');
 
         function render() {
-            const listDiv = document.getElementById('pallet-list');
-            const pending = masterList.filter(m => !state.done.includes(m.lpn));
-            
             listDiv.innerHTML = '';
-            document.getElementById('count').innerText = pending.length;
-            document.getElementById('progress-bar').style.width = ((masterList.length - pending.length) / masterList.length * 100) + '%';
-            document.getElementById('download-btn').style.display = pending.length === 0 ? 'block' : 'none';
+            countSpan.innerText = pallets.length;
+            progressBar.style.width = ((workedPallets.length / totalInitial) * 100) + '%';
+            downloadBtn.style.display = (pallets.length === 0) ? 'block' : 'none';
 
-            pending.forEach(item => {
+            pallets.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'pallet-card';
-                card.innerHTML = `<div><div class="loc">${item.loc}</div><div class="lpn">${item.lpn}</div></div><div>✅</div>`;
+                card.innerHTML = `<div><div class="loc">${item.loc}</div><div class="lpn">${item.lpn}</div></div><div>✓</div>`;
                 card.onclick = () => {
-                    state.done.push(item.lpn);
-                    localStorage.setItem(KEY, JSON.stringify(state));
+                    lastDeleted = { data: pallets[index], index: index };
+                    lastText.innerText = pallets[index].loc;
+                    workedPallets.push(pallets[index]);
+                    pallets.splice(index, 1);
+                    undoBtn.style.display = 'block';
                     render();
                 };
                 listDiv.appendChild(card);
             });
         }
 
-        // ESTA ES LA CLAVE: Escucha cambios de otros dispositivos (Reloj -> Celular)
-        window.addEventListener('storage', (e) => {
-            if (e.key === KEY) {
-                state = JSON.parse(e.newValue);
+        function undoDelete() {
+            if (lastDeleted) {
+                pallets.splice(lastDeleted.index, 0, lastDeleted.data);
+                workedPallets.pop();
+                lastDeleted = null;
+                undoBtn.style.display = 'none';
+                lastText.innerText = workedPallets.length > 0 ? workedPallets[workedPallets.length-1].loc : "None";
                 render();
-            }
-        });
-
-        function resetSync() {
-            if(confirm("¿Borrar progreso en ambos dispositivos?")) {
-                localStorage.removeItem(KEY);
-                location.reload();
             }
         }
 
         function generateReport() {
             const canvas = document.getElementById('reportCanvas');
             const ctx = canvas.getContext('2d');
-            const finished = masterList.filter(m => state.done.includes(m.lpn));
-            canvas.width = 500; canvas.height = 150 + (finished.length * 25);
+            const dateStr = new Date().toLocaleString();
+            canvas.width = 500; canvas.height = 130 + (workedPallets.length * 30);
             ctx.fillStyle = "white"; ctx.fillRect(0,0,500,canvas.height);
-            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial";
-            ctx.fillText("INVENTORY WORK REPORT", 30, 40);
-            ctx.fillStyle = "black"; ctx.font = "12px Courier";
-            finished.forEach((p, i) => ctx.fillText(`${i+1}. LOC: ${p.loc} | LPN: ${p.lpn}`, 30, 80 + (i*25)));
-            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-50, 500, 50);
-            ctx.fillStyle = "white"; ctx.fillText("Finalizado: " + new Date().toLocaleString(), 30, canvas.height-20);
-            const link = document.createElement('a');
-            link.download = 'Reporte.png'; link.href = canvas.toDataURL(); link.click();
+            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial"; ctx.fillText("INVENTORY WORK REPORT", 30, 50);
+            ctx.fillStyle = "black"; ctx.font = "14px Courier New";
+            workedPallets.forEach((p, i) => ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28)));
+            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-60, 500, 60);
+            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial"; ctx.fillText(`Completion Date & Time: ${dateStr}`, 30, canvas.height-25);
+            const link = document.createElement('a'); link.download = 'Report.png'; link.href = canvas.toDataURL(); link.click();
         }
 
         render();
