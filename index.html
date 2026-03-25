@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Pro - Clean Edition</title>
+    <title>Picker Helper - Watch optimized</title>
     <meta name="mobile-web-app-capable" content="yes">
     <style>
         :root {
@@ -14,7 +14,6 @@
             --warning: #ffd60a;
             --success: #30d158;
             --undo: #ff453a;
-            --progress-bg: #333;
             --navy: #002d72;
         }
         body { 
@@ -22,73 +21,90 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 0 10px 100px 10px;
+            padding: 0; /* Quitamos padding general para ganar espacio */
             overscroll-behavior: none;
         }
+        
+        /* CABECERA COMPACTA Y FLOTANTE */
         .header { 
             position: sticky; 
             top: 0; 
-            background: var(--bg); 
-            padding: 15px 0 10px 0;
-            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.85); /* Semitransparente para ver fondo */
+            backdrop-filter: blur(5px);
+            padding: 5px 8px; /* Padding mínimo */
+            border-bottom: 1px solid #222;
             z-index: 100;
-        }
-        .progress-container {
-            width: 100%;
-            height: 8px;
-            background-color: var(--progress-bg);
-            border-radius: 4px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-        #progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--success);
-            transition: width 0.4s ease;
-        }
-        h2 { margin: 0; font-size: 1.1rem; text-align: center; color: var(--accent); }
-        #stats { text-align: center; font-size: 1rem; margin-top: 5px; font-weight: bold; }
-        
-        /* Contenedor de Last Action y Undo unidos */
-        .action-bar {
-            background: #1a1a1a;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.9rem;
         }
-        #last-text { color: var(--success); font-weight: bold; }
+        
+        /* Contenedor compacto para Pending y Last unidos */
+        .info-bar {
+            display: flex;
+            gap: 10px;
+            font-size: 0.7rem; /* Fuente pequeña para no estorbar */
+            opacity: 0.8;
+        }
+        #stats { font-weight: bold; color: var(--accent); }
+        #last-text { color: var(--success); }
+
         #undo-btn { 
             color: var(--undo); 
             background: none; 
             border: none; 
-            font-size: 0.9rem; 
+            font-size: 0.7rem; /* Misma fuente pequeña */
             font-weight: bold; 
             padding: 0;
             display: none;
             cursor: pointer;
         }
 
-        .list-container { display: flex; flex-direction: column; gap: 8px; }
+        /* DISEÑO DE TARJETA: LOCATION ENORME */
+        .list-container { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 2px; /* Espacio mínimo entre tarjetas */
+            padding: 2px 5px; 
+        }
+        
         .pallet-card {
             background-color: var(--card);
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 8px;
+            padding: 8px 12px; /* Padding compacto */
             display: flex;
-            justify-content: space-between;
+            flex-direction: column; /* Diseño en columna */
+            justify-content: center;
             align-items: center;
+            border: 1px solid #222;
+            height: 70px; /* Altura fija para el reloj */
         }
-        .loc { font-weight: bold; font-size: 1.3rem; color: var(--warning); }
-        .lpn { font-family: monospace; font-size: 0.85rem; opacity: 0.6; margin-top: 4px; }
         
+        .pallet-card:active { background-color: #2c2c2e; transform: scale(0.98); }
+        
+        /* LOCATION: EL ELEMENTO PRINCIPAL */
+        .loc { 
+            font-weight: bold; 
+            font-size: 1.8rem; /* ¡Fuente muy grande! */
+            color: var(--warning);
+            margin: 0;
+            line-height: 1;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .lpn { 
+            font-family: monospace; 
+            font-size: 0.65rem; /* Fuente pequeña para LPN */
+            opacity: 0.5; 
+            margin-top: 2px;
+            text-align: center;
+        }
+        
+        /* Controles finales compactos */
         .controls {
             position: fixed;
-            bottom: 20px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -96,28 +112,33 @@
         }
         #download-btn {
             width: 100%;
-            padding: 16px;
-            border-radius: 30px;
+            padding: 12px;
+            border-radius: 20px;
             border: none;
             background: var(--navy);
             color: white;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.9rem;
             display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        
+        /* Ajuste específico para pantallas muy pequeñas (Reloj) */
+        @media (max-width: 300px) {
+            .loc { font-size: 1.5rem; }
+            .pallet-card { height: 60px; }
+            .info-bar, #undo-btn { font-size: 0.6rem; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>📦 Picker Helper</h2>
-        <div class="progress-container"><div id="progress-bar"></div></div>
-        <div id="stats">Pending: <span id="count">0</span></div>
-        <div class="action-bar">
-            <span>Last: <span id="last-text">None</span></span>
-            <button id="undo-btn" onclick="undoDelete()">UNDO</button>
+        <div class="info-bar">
+            <span id="stats">P:<span id="count">0</span></span>
+            <span>L:<span id="last-text">None</span></span>
         </div>
+        <button id="undo-btn" onclick="undoDelete()">UNDO</button>
     </div>
 
     <div id="pallet-list" class="list-container"></div>
@@ -129,18 +150,22 @@
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // DATOS DE LA IMAGEN
+        // DATOS EXTRAÍDOS DE LA ÚLTIMA IMAGEN (A-Z)
         let pallets = [
-            { lpn: "LEC000000011JK", loc: "AN24F003" }, { lpn: "LEC000000011JU", loc: "AN26B003" },
-            { lpn: "LEC000000011JS", loc: "AN26C001" }, { lpn: "LEC000000011JV", loc: "AN26F002" },
-            { lpn: "LEC000000011JR", loc: "AQ25B002" }, { lpn: "LEC000000011JN", loc: "AQ25D001" },
-            { lpn: "LEC000000011JT", loc: "AQ25F001" }, { lpn: "LEC000000011JM", loc: "AQ25F002" },
-            { lpn: "LEC000000011JD", loc: "AR59A001" }, { lpn: "LEC000000011JA", loc: "AR59A002" },
-            { lpn: "LEC000000011JQ", loc: "AR59A003" }, { lpn: "LEC000000011JE", loc: "AR61B002" },
-            { lpn: "LEC000000011JP", loc: "AR61D003" }, { lpn: "LEC000000011JG", loc: "AR65B003" },
-            { lpn: "LEC000000011JL", loc: "AR65C001" }, { lpn: "LEC000000011JC", loc: "AR65C002" },
-            { lpn: "LEC000000011JW", loc: "AR65C003" }, { lpn: "LEC000000011JO", loc: "AR67D003" }
-        ].sort((a, b) => a.loc.localeCompare(b.loc));
+            { lpn: "LEC0000000113C", loc: "AQ11D002" }, { lpn: "LEC0000000113G", loc: "AQ11D003" },
+            { lpn: "LEC0000000113E", loc: "AQ11C002" }, { lpn: "LEC00000001131", loc: "AN16D001" },
+            { lpn: "LEC0000000112Y", loc: "AQ15C003" }, { lpn: "LEC0000000113V", loc: "AQ11F002" },
+            { lpn: "LEC0000000113H", loc: "AQ13F001" }, { lpn: "LEC0000000113J", loc: "AQ13F003" },
+            { lpn: "LEC00000001134", loc: "AQ15B002" }, { lpn: "LEC0000000113K", loc: "AQ13F002" },
+            { lpn: "LEC0000000113P", loc: "AQ11F001" }, { lpn: "LEC00000001137", loc: "AO37A003" },
+            { lpn: "LEC0000000113X", loc: "AQ11A003" }, { lpn: "LEC00000001139", loc: "AQ13D001" },
+            { lpn: "LEC0000000112S", loc: "AO37B003" }, { lpn: "LEC0000000113I", loc: "AQ13C001" },
+            { lpn: "LEC0000000112Q", loc: "AO37B001" }, { lpn: "LEC0000000112O", loc: "AO37B002" },
+            { lpn: "LEC0000000113Z", loc: "AP29D001" }, { lpn: "LEC0000000113L", loc: "AQ13B003" },
+            { lpn: "LEC0000000112V", loc: "AN14F003" }, { lpn: "LEC0000000112L", loc: "AN16C001" },
+            { lpn: "LEC0000000113M", loc: "AN12F003" }, { lpn: "LEC0000000113N", loc: "AN14F002" },
+            { lpn: "LEC0000000113O", loc: "AN14F001" }, { lpn: "LEC0000000113F", loc: "AN12F002" }
+        ].sort((a, b) => a.loc.localeCompare(b.loc)); // Ordenar A-Z
 
         const totalInitial = pallets.length;
         let workedPallets = []; 
@@ -151,28 +176,37 @@
         const lastText = document.getElementById('last-text');
         const undoBtn = document.getElementById('undo-btn');
         const downloadBtn = document.getElementById('download-btn');
-        const progressBar = document.getElementById('progress-bar');
 
         function render() {
             listDiv.innerHTML = '';
             countSpan.innerText = pallets.length;
-            progressBar.style.width = ((workedPallets.length / totalInitial) * 100) + '%';
-            downloadBtn.style.display = (pallets.length === 0) ? 'block' : 'none';
+            
+            // Botón corporativo Navy Blue aparece solo al terminar
+            downloadBtn.style.display = (pallets.length === 0 && workedPallets.length > 0) ? 'block' : 'none';
 
             pallets.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'pallet-card';
-                card.innerHTML = `<div><div class="loc">${item.loc}</div><div class="lpn">${item.lpn}</div></div><div>✓</div>`;
-                card.onclick = () => {
-                    lastDeleted = { data: pallets[index], index: index };
-                    lastText.innerText = pallets[index].loc;
-                    workedPallets.push(pallets[index]);
-                    pallets.splice(index, 1);
-                    undoBtn.style.display = 'block';
-                    render();
-                };
+                // El diseño pone la LOCATION primero y ENORME, el LPN pequeño debajo.
+                card.innerHTML = `
+                    <span class="loc">${item.loc}</span>
+                    <span class="lpn">${item.lpn}</span>
+                `;
+                card.onclick = () => removePallet(index);
                 listDiv.appendChild(card);
             });
+        }
+
+        function removePallet(index) {
+            const item = pallets[index];
+            lastDeleted = { data: item, index: index };
+            lastText.innerText = item.loc.substring(0, 3); // Solo primeros 3 chars para no ocupar espacio
+            workedPallets.push({ ...item, time: new Date().toLocaleTimeString() });
+            pallets.splice(index, 1);
+            undoBtn.style.display = 'block';
+            render();
+            // Deshacer desaparece rápido en el reloj
+            setTimeout(() => { undoBtn.style.display = 'none'; }, 6000);
         }
 
         function undoDelete() {
@@ -181,7 +215,7 @@
                 workedPallets.pop();
                 lastDeleted = null;
                 undoBtn.style.display = 'none';
-                lastText.innerText = workedPallets.length > 0 ? workedPallets[workedPallets.length-1].loc : "None";
+                lastText.innerText = workedPallets.length > 0 ? workedPallets[workedPallets.length-1].loc.substring(0, 3) : "None";
                 render();
             }
         }
@@ -196,8 +230,8 @@
             ctx.fillStyle = "black"; ctx.font = "14px Courier New";
             workedPallets.forEach((p, i) => ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28)));
             ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-60, 500, 60);
-            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial"; ctx.fillText(`Completion Date & Time: ${dateStr}`, 30, canvas.height-25);
-            const link = document.createElement('a'); link.download = 'Report.png'; link.href = canvas.toDataURL(); link.click();
+            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial"; ctx.fillText(`Completed: ${dateStr}`, 30, canvas.height-25);
+            const link = document.createElement('a'); link.download = 'KN_Work_Report.png'; link.href = canvas.toDataURL(); link.click();
         }
 
         render();
