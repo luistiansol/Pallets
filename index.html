@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Helper - Watch optimized</title>
-    <meta name="mobile-web-app-capable" content="yes">
+    <title>Picker Helper v10</title>
     <style>
         :root {
             --bg: #000000;
@@ -14,143 +13,141 @@
             --warning: #ffd60a;
             --success: #30d158;
             --undo: #ff453a;
-            --navy: #002d72;
         }
         body { 
-            font-family: -apple-system, system-ui, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 0; /* Quitamos padding general para ganar espacio */
+            padding: 0 0 80px 0;
             overscroll-behavior: none;
         }
         
-        /* CABECERA COMPACTA Y FLOTANTE */
+        /* BARRA DE PROGRESO (ARRIBA DEL TODO) */
+        .progress-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--success);
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.4s ease;
+        }
+
+        /* CABECERA: TAMAÑO MEDIO PARA RELOJ */
         .header { 
             position: sticky; 
-            top: 0; 
-            background: rgba(0, 0, 0, 0.85); /* Semitransparente para ver fondo */
-            backdrop-filter: blur(5px);
-            padding: 5px 8px; /* Padding mínimo */
-            border-bottom: 1px solid #222;
-            z-index: 100;
+            top: 4px; 
+            background: #111;
+            padding: 10px;
+            border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 100;
         }
         
-        /* Contenedor compacto para Pending y Last unidos */
-        .info-bar {
+        .info-group {
             display: flex;
-            gap: 10px;
-            font-size: 0.7rem; /* Fuente pequeña para no estorbar */
-            opacity: 0.8;
+            flex-direction: column;
+            gap: 2px;
         }
-        #stats { font-weight: bold; color: var(--accent); }
+        .info-group span { font-size: 0.9rem; font-weight: bold; }
+        #count { color: var(--accent); }
         #last-text { color: var(--success); }
 
+        /* BOTÓN UNDO: AHORA SÍ SE VE */
         #undo-btn { 
-            color: var(--undo); 
-            background: none; 
-            border: none; 
-            font-size: 0.7rem; /* Misma fuente pequeña */
-            font-weight: bold; 
-            padding: 0;
+            background-color: var(--undo);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.8rem;
             display: none;
             cursor: pointer;
         }
 
-        /* DISEÑO DE TARJETA: LOCATION ENORME */
+        /* LISTA: PRIORIDAD A LA UBICACIÓN */
         .list-container { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 2px; /* Espacio mínimo entre tarjetas */
-            padding: 2px 5px; 
+            padding: 10px 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         
         .pallet-card {
             background-color: var(--card);
-            border-radius: 8px;
-            padding: 8px 12px; /* Padding compacto */
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
             display: flex;
-            flex-direction: column; /* Diseño en columna */
+            flex-direction: column;
             justify-content: center;
-            align-items: center;
-            border: 1px solid #222;
-            height: 70px; /* Altura fija para el reloj */
         }
         
-        .pallet-card:active { background-color: #2c2c2e; transform: scale(0.98); }
+        .pallet-card:active { background-color: #333; }
         
-        /* LOCATION: EL ELEMENTO PRINCIPAL */
         .loc { 
             font-weight: bold; 
-            font-size: 1.8rem; /* ¡Fuente muy grande! */
+            font-size: 1.8rem; /* Bien grande para ver desde lejos */
             color: var(--warning);
             margin: 0;
-            line-height: 1;
-            width: 100%;
-            text-align: center;
         }
         
         .lpn { 
-            font-family: monospace; 
-            font-size: 0.65rem; /* Fuente pequeña para LPN */
-            opacity: 0.5; 
-            margin-top: 2px;
-            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            margin-top: 5px;
+            font-family: monospace;
         }
         
-        /* Controles finales compactos */
-        .controls {
+        /* BOTÓN REPORTE */
+        .footer-btn {
             position: fixed;
-            bottom: 10px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
-            z-index: 100;
+            z-index: 200;
         }
         #download-btn {
             width: 100%;
-            padding: 12px;
-            border-radius: 20px;
+            padding: 15px;
+            border-radius: 30px;
             border: none;
-            background: var(--navy);
+            background: #002d72;
             color: white;
             font-weight: bold;
-            font-size: 0.9rem;
             display: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        
-        /* Ajuste específico para pantallas muy pequeñas (Reloj) */
-        @media (max-width: 300px) {
-            .loc { font-size: 1.5rem; }
-            .pallet-card { height: 60px; }
-            .info-bar, #undo-btn { font-size: 0.6rem; }
         }
     </style>
 </head>
 <body>
 
+    <div id="progress-line" class="progress-line"></div>
+
     <div class="header">
-        <div class="info-bar">
-            <span id="stats">P:<span id="count">0</span></span>
-            <span>L:<span id="last-text">None</span></span>
+        <div class="info-group">
+            <span>Pending: <span id="count">0</span></span>
+            <span>Last: <span id="last-text">None</span></span>
         </div>
         <button id="undo-btn" onclick="undoDelete()">UNDO</button>
     </div>
 
     <div id="pallet-list" class="list-container"></div>
 
-    <div class="controls">
-        <button id="download-btn" onclick="generateReport()">💾 SAVE FINAL REPORT</button>
+    <div class="footer-btn">
+        <button id="download-btn" onclick="generateReport()">💾 SAVE REPORT</button>
     </div>
 
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // DATOS EXTRAÍDOS DE LA ÚLTIMA IMAGEN (A-Z)
+        // DATOS (A-Z)
         let pallets = [
             { lpn: "LEC0000000113C", loc: "AQ11D002" }, { lpn: "LEC0000000113G", loc: "AQ11D003" },
             { lpn: "LEC0000000113E", loc: "AQ11C002" }, { lpn: "LEC00000001131", loc: "AN16D001" },
@@ -165,7 +162,7 @@
             { lpn: "LEC0000000112V", loc: "AN14F003" }, { lpn: "LEC0000000112L", loc: "AN16C001" },
             { lpn: "LEC0000000113M", loc: "AN12F003" }, { lpn: "LEC0000000113N", loc: "AN14F002" },
             { lpn: "LEC0000000113O", loc: "AN14F001" }, { lpn: "LEC0000000113F", loc: "AN12F002" }
-        ].sort((a, b) => a.loc.localeCompare(b.loc)); // Ordenar A-Z
+        ].sort((a, b) => a.loc.localeCompare(b.loc));
 
         const totalInitial = pallets.length;
         let workedPallets = []; 
@@ -176,37 +173,28 @@
         const lastText = document.getElementById('last-text');
         const undoBtn = document.getElementById('undo-btn');
         const downloadBtn = document.getElementById('download-btn');
+        const progressLine = document.getElementById('progress-line');
 
         function render() {
             listDiv.innerHTML = '';
             countSpan.innerText = pallets.length;
-            
-            // Botón corporativo Navy Blue aparece solo al terminar
-            downloadBtn.style.display = (pallets.length === 0 && workedPallets.length > 0) ? 'block' : 'none';
+            progressLine.style.width = ((workedPallets.length / totalInitial) * 100) + '%';
+            downloadBtn.style.display = (pallets.length === 0) ? 'block' : 'none';
 
             pallets.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'pallet-card';
-                // El diseño pone la LOCATION primero y ENORME, el LPN pequeño debajo.
-                card.innerHTML = `
-                    <span class="loc">${item.loc}</span>
-                    <span class="lpn">${item.lpn}</span>
-                `;
-                card.onclick = () => removePallet(index);
+                card.innerHTML = `<span class="loc">${item.loc}</span><span class="lpn">${item.lpn}</span>`;
+                card.onclick = () => {
+                    lastDeleted = { data: pallets[index], index: index };
+                    lastText.innerText = item.loc;
+                    workedPallets.push(item);
+                    pallets.splice(index, 1);
+                    undoBtn.style.display = 'block';
+                    render();
+                };
                 listDiv.appendChild(card);
             });
-        }
-
-        function removePallet(index) {
-            const item = pallets[index];
-            lastDeleted = { data: item, index: index };
-            lastText.innerText = item.loc.substring(0, 3); // Solo primeros 3 chars para no ocupar espacio
-            workedPallets.push({ ...item, time: new Date().toLocaleTimeString() });
-            pallets.splice(index, 1);
-            undoBtn.style.display = 'block';
-            render();
-            // Deshacer desaparece rápido en el reloj
-            setTimeout(() => { undoBtn.style.display = 'none'; }, 6000);
         }
 
         function undoDelete() {
@@ -215,7 +203,7 @@
                 workedPallets.pop();
                 lastDeleted = null;
                 undoBtn.style.display = 'none';
-                lastText.innerText = workedPallets.length > 0 ? workedPallets[workedPallets.length-1].loc.substring(0, 3) : "None";
+                lastText.innerText = workedPallets.length > 0 ? workedPallets[workedPallets.length-1].loc : "None";
                 render();
             }
         }
@@ -223,15 +211,14 @@
         function generateReport() {
             const canvas = document.getElementById('reportCanvas');
             const ctx = canvas.getContext('2d');
-            const dateStr = new Date().toLocaleString();
-            canvas.width = 500; canvas.height = 130 + (workedPallets.length * 30);
+            canvas.width = 500; canvas.height = 150 + (workedPallets.length * 30);
             ctx.fillStyle = "white"; ctx.fillRect(0,0,500,canvas.height);
-            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial"; ctx.fillText("INVENTORY WORK REPORT", 30, 50);
-            ctx.fillStyle = "black"; ctx.font = "14px Courier New";
-            workedPallets.forEach((p, i) => ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28)));
+            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial"; ctx.fillText("INVENTORY WORK REPORT", 30, 40);
+            ctx.fillStyle = "black"; ctx.font = "14px Courier";
+            workedPallets.forEach((p, i) => ctx.fillText(`${i+1}. LOC: ${p.loc} | LPN: ${p.lpn}`, 30, 80 + (i*28)));
             ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-60, 500, 60);
-            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial"; ctx.fillText(`Completed: ${dateStr}`, 30, canvas.height-25);
-            const link = document.createElement('a'); link.download = 'KN_Work_Report.png'; link.href = canvas.toDataURL(); link.click();
+            ctx.fillStyle = "white"; ctx.fillText("Completed: " + new Date().toLocaleString(), 30, canvas.height-25);
+            const link = document.createElement('a'); link.download = 'Report.png'; link.href = canvas.toDataURL(); link.click();
         }
 
         render();
