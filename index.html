@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Helper v10</title>
+    <title>Picker Helper v11 - Grouped UI</title>
     <style>
         :root {
             --bg: #000000;
@@ -22,55 +22,63 @@
             padding: 0 0 80px 0;
             overscroll-behavior: none;
         }
-        
-        /* BARRA DE PROGRESO (ARRIBA DEL TODO) */
-        .progress-line {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 4px;
-            background: var(--success);
-            width: 0%;
-            z-index: 1000;
-            transition: width 0.4s ease;
-        }
 
-        /* CABECERA: TAMAÑO MEDIO PARA RELOJ */
+        /* CABECERA AGRUPADA */
         .header { 
             position: sticky; 
-            top: 4px; 
+            top: 0; 
             background: #111;
-            padding: 10px;
+            padding: 12px 12px 8px 12px;
             border-bottom: 1px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             z-index: 100;
         }
         
-        .info-group {
+        /* Fila 1: Pending y Undo */
+        .row-1 {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
-        .info-group span { font-size: 0.9rem; font-weight: bold; }
+        .row-1 span { font-size: 1rem; font-weight: bold; }
         #count { color: var(--accent); }
-        #last-text { color: var(--success); }
 
-        /* BOTÓN UNDO: AHORA SÍ SE VE */
         #undo-btn { 
             background-color: var(--undo);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-weight: bold;
             font-size: 0.8rem;
             display: none;
             cursor: pointer;
         }
 
-        /* LISTA: PRIORIDAD A LA UBICACIÓN */
+        /* Fila 2: Last Action */
+        .row-2 {
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #last-text { color: var(--success); }
+
+        /* Fila 3: Barra de progreso como separador */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--success);
+            transition: width 0.4s ease;
+        }
+
+        /* LISTA */
         .list-container { 
             padding: 10px 5px;
             display: flex;
@@ -84,58 +92,28 @@
             border-radius: 12px;
             padding: 15px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
-        
         .pallet-card:active { background-color: #333; }
+        .loc { font-weight: bold; font-size: 1.8rem; color: var(--warning); margin: 0; }
+        .lpn { font-size: 0.8rem; opacity: 0.6; margin-top: 5px; font-family: monospace; }
         
-        .loc { 
-            font-weight: bold; 
-            font-size: 1.8rem; /* Bien grande para ver desde lejos */
-            color: var(--warning);
-            margin: 0;
-        }
-        
-        .lpn { 
-            font-size: 0.8rem;
-            opacity: 0.6;
-            margin-top: 5px;
-            font-family: monospace;
-        }
-        
-        /* BOTÓN REPORTE */
-        .footer-btn {
-            position: fixed;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            z-index: 200;
-        }
-        #download-btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 30px;
-            border: none;
-            background: #002d72;
-            color: white;
-            font-weight: bold;
-            display: none;
-        }
+        .footer-btn { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 200; }
+        #download-btn { width: 100%; padding: 15px; border-radius: 30px; border: none; background: #002d72; color: white; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
 
-    <div id="progress-line" class="progress-line"></div>
-
     <div class="header">
-        <div class="info-group">
+        <div class="row-1">
             <span>Pending: <span id="count">0</span></span>
-            <span>Last: <span id="last-text">None</span></span>
+            <button id="undo-btn" onclick="undoDelete()">UNDO</button>
         </div>
-        <button id="undo-btn" onclick="undoDelete()">UNDO</button>
+        <div class="row-2">
+            Last: <span id="last-text">None</span>
+        </div>
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
     </div>
 
     <div id="pallet-list" class="list-container"></div>
@@ -147,7 +125,6 @@
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // DATOS (A-Z)
         let pallets = [
             { lpn: "LEC0000000113C", loc: "AQ11D002" }, { lpn: "LEC0000000113G", loc: "AQ11D003" },
             { lpn: "LEC0000000113E", loc: "AQ11C002" }, { lpn: "LEC00000001131", loc: "AN16D001" },
@@ -173,18 +150,18 @@
         const lastText = document.getElementById('last-text');
         const undoBtn = document.getElementById('undo-btn');
         const downloadBtn = document.getElementById('download-btn');
-        const progressLine = document.getElementById('progress-line');
+        const progressBar = document.getElementById('progress-bar');
 
         function render() {
             listDiv.innerHTML = '';
             countSpan.innerText = pallets.length;
-            progressLine.style.width = ((workedPallets.length / totalInitial) * 100) + '%';
+            progressBar.style.width = ((workedPallets.length / totalInitial) * 100) + '%';
             downloadBtn.style.display = (pallets.length === 0) ? 'block' : 'none';
 
             pallets.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'pallet-card';
-                card.innerHTML = `<span class="loc">${item.loc}</span><span class="lpn">${item.lpn}</span>`;
+                card.innerHTML = `<div class="loc">${item.loc}</div><div class="lpn">${item.lpn}</div>`;
                 card.onclick = () => {
                     lastDeleted = { data: pallets[index], index: index };
                     lastText.innerText = item.loc;
