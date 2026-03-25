@@ -14,7 +14,7 @@
             --warning: #ffd60a;
             --success: #30d158;
             --progress-bg: #333;
-            --navy: #002d72; /* Color elegante Navy Blue */
+            --navy: #002d72;
         }
         body { 
             font-family: -apple-system, system-ui, sans-serif;
@@ -118,21 +118,26 @@
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // --- DATA SECTION: ACTUALIZA ESTO CON LA NUEVA IMAGEN ---
+        // --- DATA ACTUALIZADA DESDE IMAGEN ---
         let pallets = [
-            { lpn: "LEC0000000113F", loc: "AN12F002" }, { lpn: "LEC0000000113M", loc: "AN12F003" },
-            { lpn: "LEC0000000113O", loc: "AN14F001" }, { lpn: "LEC0000000113N", loc: "AN14F002" },
-            { lpn: "LEC0000000112V", loc: "AN14F003" }, { lpn: "LEC0000000112L", loc: "AN16C001" },
-            { lpn: "LEC00000001131", loc: "AN16D001" }, { lpn: "LEC00000001137", loc: "AO37A003" },
-            { lpn: "LEC0000000112Q", loc: "AO37B001" }, { lpn: "LEC0000000112O", loc: "AO37B002" },
-            { lpn: "LEC0000000112S", loc: "AO37B003" }, { lpn: "LEC0000000113Z", loc: "AP29D001" },
-            { lpn: "LEC0000000113X", loc: "AQ11A003" }, { lpn: "LEC0000000113E", loc: "AQ11C002" },
-            { lpn: "LEC0000000113C", loc: "AQ11D002" }, { lpn: "LEC0000000113G", loc: "AQ11D003" },
-            { lpn: "LEC0000000113P", loc: "AQ11F001" }, { lpn: "LEC0000000113V", loc: "AQ11F002" },
-            { lpn: "LEC0000000113L", loc: "AQ13B003" }, { lpn: "LEC0000000113I", loc: "AQ13C001" },
-            { lpn: "LEC00000001139", loc: "AQ13D001" }, { lpn: "LEC0000000113H", loc: "AQ13F001" },
-            { lpn: "LEC0000000113K", loc: "AQ13F002" }, { lpn: "LEC0000000113J", loc: "AQ13F003" },
-            { lpn: "LEC00000001134", loc: "AQ15B002" }, { lpn: "LEC0000000112Y", loc: "AQ15C003" }
+            { lpn: "LEC000000011JK", loc: "AN24F003" },
+            { lpn: "LEC000000011JU", loc: "AN26B003" },
+            { lpn: "LEC000000011JS", loc: "AN26C001" },
+            { lpn: "LEC000000011JV", loc: "AN26F002" },
+            { lpn: "LEC000000011JR", loc: "AQ25B002" },
+            { lpn: "LEC000000011JN", loc: "AQ25D001" },
+            { lpn: "LEC000000011JT", loc: "AQ25F001" },
+            { lpn: "LEC000000011JM", loc: "AQ25F002" },
+            { lpn: "LEC000000011JD", loc: "AR59A001" },
+            { lpn: "LEC000000011JA", loc: "AR59A002" },
+            { lpn: "LEC000000011JQ", loc: "AR59A003" },
+            { lpn: "LEC000000011JE", loc: "AR61B002" },
+            { lpn: "LEC000000011JP", loc: "AR61D003" },
+            { lpn: "LEC000000011JG", loc: "AR65B003" },
+            { lpn: "LEC000000011JL", loc: "AR65C001" },
+            { lpn: "LEC000000011JC", loc: "AR65C002" },
+            { lpn: "LEC000000011JW", loc: "AR65C003" },
+            { lpn: "LEC000000011JO", loc: "AR67D003" }
         ];
 
         pallets.sort((a, b) => a.loc.localeCompare(b.loc));
@@ -198,51 +203,36 @@
             const canvas = document.getElementById('reportCanvas');
             const ctx = canvas.getContext('2d');
             const endTimeStr = new Date().toLocaleString();
-            
             canvas.width = 500;
             const listHeight = workedPallets.length * 28;
             canvas.height = 100 + listHeight + 60; 
-
-            // Fondo Blanco
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Título Reporte (Navy)
             ctx.fillStyle = "#002d72";
             ctx.font = "bold 20px Arial";
             ctx.fillText("INVENTORY WORK REPORT", 30, 50);
-            
-            // Línea separadora
             ctx.strokeStyle = "#002d72";
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(30, 65);
             ctx.lineTo(470, 65);
             ctx.stroke();
-
-            // Lista de Pallets
             ctx.fillStyle = "black";
             ctx.font = "14px Courier New";
             workedPallets.forEach((p, i) => {
                 ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28));
             });
-
-            // PIE DE PÁGINA (NAVY BLUE)
             const footerY = canvas.height - 60;
             ctx.fillStyle = "#002d72";
             ctx.fillRect(0, footerY, canvas.width, 60);
-
-            // Texto Fecha y Hora (Blanco)
             ctx.fillStyle = "white";
             ctx.font = "italic 14px Arial";
             ctx.fillText(`Completion Date & Time: ${endTimeStr}`, 30, footerY + 35);
-
             const link = document.createElement('a');
             link.download = `Work_Report_${new Date().getTime()}.png`;
             link.href = canvas.toDataURL();
             link.click();
         }
-
         render();
     </script>
 </body>
