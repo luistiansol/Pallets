@@ -3,50 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inventory Pro v2 - KN</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>Picker Pro v3 - KN</title>
+    <meta name="mobile-web-app-capable" content="yes">
     <style>
-        :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --accent: #0a84ff; --warning: #ffd60a; --success: #30d158; }
-        body { font-family: system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px 10px 110px 10px; }
-        .header { text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; position: sticky; top: 0; background: var(--bg); z-index: 10; }
-        #stats { font-size: 1.2rem; margin: 10px 0; color: var(--accent); }
-        #last-action-box { background: #2c2c2e; border-left: 4px solid var(--success); padding: 10px; margin: 10px 0; font-size: 0.9rem; border-radius: 6px; }
+        :root {
+            --bg: #000000;
+            --card: #1c1c1e;
+            --text: #ffffff;
+            --accent: #0a84ff;
+            --warning: #ffd60a;
+            --success: #30d158;
+            --progress-bg: #333;
+        }
+        body { 
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0 10px 110px 10px;
+            overscroll-behavior: none;
+        }
+        .header { 
+            position: sticky; 
+            top: 0; 
+            background: var(--bg); 
+            padding: 15px 0 10px 0;
+            border-bottom: 1px solid #333;
+            z-index: 100;
+        }
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: var(--progress-bg);
+            border-radius: 6px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        h2 { margin: 0; font-size: 1.1rem; text-align: center; color: var(--accent); }
+        #stats { text-align: center; font-size: 1rem; margin-top: 5px; font-weight: bold; }
+        #last-action-box {
+            background: #1a1a1a;
+            border-left: 4px solid var(--success);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
         .list-container { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        .pallet-card { background-color: var(--card); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
-        .controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; width: 90%; align-items: center; }
-        .btn-group { display: flex; gap: 10px; width: 100%; justify-content: center; }
-        button { padding: 14px 20px; border-radius: 30px; border: none; font-weight: bold; font-size: 0.9rem; }
-        #undo-btn { background: #444; color: white; display: none; width: 100%; }
-        #new-list-btn { background: var(--accent); color: white; flex: 1; }
-        #download-btn { background: var(--success); color: white; display: none; flex: 1; }
-        #loading { display: none; text-align: center; color: var(--warning); padding: 20px; font-weight: bold; }
-        #file-input { display: none; }
+        .pallet-card {
+            background-color: var(--card);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pallet-card:active { background-color: #2c2c2e; transform: scale(0.97); }
+        .loc { font-weight: bold; font-size: 1.3rem; color: var(--warning); }
+        .lpn { font-family: monospace; font-size: 0.85rem; opacity: 0.6; margin-top: 4px; }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        button {
+            padding: 16px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+        #undo-btn { background: #333; color: white; display: none; }
+        #download-btn { background: var(--success); color: white; display: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>📦 Picker Helper v2</h2>
+        <h2>📦 Picker Progress</h2>
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
         <div id="stats">Pending: <span id="count">0</span></div>
-        <div id="last-action-box">Last action: <br><span id="last-text" style="font-weight:bold; color:var(--success)">None</span></div>
+        <div id="last-action-box">
+            Last: <span id="last-text" style="color:var(--success); font-weight:bold;">None</span>
+        </div>
     </div>
 
-    <div id="loading">Scanning... <br><small>Make sure the photo is clear and bright.</small></div>
     <div id="pallet-list" class="list-container"></div>
 
     <div class="controls">
         <button id="undo-btn" onclick="undoDelete()">↩ Undo last pick</button>
-        <div class="btn-group">
-            <button id="new-list-btn" onclick="document.getElementById('file-input').click()">📸 New Scan</button>
-            <button id="download-btn" onclick="generateReport()">💾 Save Report</button>
-        </div>
+        <button id="download-btn" onclick="generateReport()">💾 Save Work Report</button>
     </div>
 
-    <input type="file" id="file-input" accept="image/*">
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        let pallets = [];
+        // --- DATA SECTION: ESTO ES LO ÚNICO QUE CAMBIARÁ ---
+        let pallets = [
+            { lpn: "LEC0000000113F", loc: "AN12F002" }, { lpn: "LEC0000000113M", loc: "AN12F003" },
+            { lpn: "LEC0000000113O", loc: "AN14F001" }, { lpn: "LEC0000000113N", loc: "AN14F002" },
+            { lpn: "LEC0000000112V", loc: "AN14F003" }, { lpn: "LEC0000000112L", loc: "AN16C001" },
+            { lpn: "LEC00000001131", loc: "AN16D001" }, { lpn: "LEC00000001137", loc: "AO37A003" },
+            { lpn: "LEC0000000112Q", loc: "AO37B001" }, { lpn: "LEC0000000112O", loc: "AO37B002" },
+            { lpn: "LEC0000000112S", loc: "AO37B003" }, { lpn: "LEC0000000113Z", loc: "AP29D001" },
+            { lpn: "LEC0000000113X", loc: "AQ11A003" }, { lpn: "LEC0000000113E", loc: "AQ11C002" },
+            { lpn: "LEC0000000113C", loc: "AQ11D002" }, { lpn: "LEC0000000113G", loc: "AQ11D003" },
+            { lpn: "LEC0000000113P", loc: "AQ11F001" }, { lpn: "LEC0000000113V", loc: "AQ11F002" },
+            { lpn: "LEC0000000113L", loc: "AQ13B003" }, { lpn: "LEC0000000113I", loc: "AQ13C001" },
+            { lpn: "LEC00000001139", loc: "AQ13D001" }, { lpn: "LEC0000000113H", loc: "AQ13F001" },
+            { lpn: "LEC0000000113K", loc: "AQ13F002" }, { lpn: "LEC0000000113J", loc: "AQ13F003" },
+            { lpn: "LEC00000001134", loc: "AQ15B002" }, { lpn: "LEC0000000112Y", loc: "AQ15C003" }
+        ];
+
+        pallets.sort((a, b) => a.loc.localeCompare(b.loc));
+        const totalInitial = pallets.length;
         let workedPallets = []; 
         let lastDeleted = null;
 
@@ -55,57 +144,29 @@
         const lastText = document.getElementById('last-text');
         const undoBtn = document.getElementById('undo-btn');
         const downloadBtn = document.getElementById('download-btn');
-        const loading = document.getElementById('loading');
+        const progressBar = document.getElementById('progress-bar');
 
-        document.getElementById('file-input').onchange = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            loading.style.display = 'block';
-            listDiv.innerHTML = '';
-            
-            // OCR con parámetros de limpieza de imagen
-            Tesseract.recognize(file, 'eng').then(({ data: { text } }) => {
-                const lines = text.split('\n');
-                const newPallets = [];
-
-                lines.forEach(line => {
-                    // Limpieza: quitamos caracteres raros pero dejamos letras y números
-                    const cleanLine = line.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
-                    
-                    // Buscamos algo que empiece por LEC (LPN) y algo que parezca una ubicación (A-Z + números)
-                    const words = cleanLine.split(/\s+/);
-                    let foundLPN = words.find(w => w.includes('LEC') || (w.length >= 10 && w.startsWith('L')));
-                    let foundLoc = words.find(w => w.length >= 6 && /[A-Z]{2}\d+/.test(w));
-
-                    if (foundLPN && foundLoc) {
-                        newPallets.push({ lpn: foundLPN, loc: foundLoc });
-                    }
-                });
-
-                if(newPallets.length === 0) {
-                    alert("No data found. Try taking a clearer photo with more light.");
-                }
-
-                pallets = newPallets.sort((a, b) => a.loc.localeCompare(b.loc));
-                workedPallets = []; 
-                loading.style.display = 'none';
-                render();
-            }).catch(err => {
-                loading.style.display = 'none';
-                alert("Error scanning image.");
-            });
-        };
+        function updateProgress() {
+            const percent = ((workedPallets.length / totalInitial) * 100);
+            progressBar.style.width = percent + '%';
+        }
 
         function render() {
             listDiv.innerHTML = '';
             countSpan.innerText = pallets.length;
+            updateProgress();
             downloadBtn.style.display = (pallets.length === 0 && workedPallets.length > 0) ? 'block' : 'none';
 
             pallets.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'pallet-card';
-                card.innerHTML = `<div><b style="color:var(--warning); font-size:1.3rem;">${item.loc}</b><br><small>${item.lpn}</small></div><div>✓</div>`;
+                card.innerHTML = `
+                    <div style="display:flex; flex-direction:column;">
+                        <span class="loc">${item.loc}</span>
+                        <span class="lpn">${item.lpn}</span>
+                    </div>
+                    <div style="color:var(--accent); font-weight:bold;">✓</div>
+                `;
                 card.onclick = () => removePallet(index);
                 listDiv.appendChild(card);
             });
@@ -114,12 +175,12 @@
         function removePallet(index) {
             const item = pallets[index];
             lastDeleted = { data: item, index: index };
-            lastText.innerText = `${item.loc} | ${item.lpn}`;
+            lastText.innerText = `${item.loc}`;
             workedPallets.push({ ...item, time: new Date().toLocaleTimeString() });
             pallets.splice(index, 1);
             undoBtn.style.display = 'block';
             render();
-            setTimeout(() => { undoBtn.style.display = 'none'; }, 7000);
+            setTimeout(() => { undoBtn.style.display = 'none'; }, 8000);
         }
 
         function undoDelete() {
@@ -135,25 +196,24 @@
         function generateReport() {
             const canvas = document.getElementById('reportCanvas');
             const ctx = canvas.getContext('2d');
-            const dateStr = new Date().toLocaleString();
             canvas.width = 500;
-            canvas.height = 100 + (workedPallets.length * 30);
+            canvas.height = 130 + (workedPallets.length * 30);
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "black";
             ctx.font = "bold 20px Arial";
             ctx.fillText("INVENTORY REPORT - KUEHNE+NAGEL", 30, 40);
-            ctx.font = "italic 14px Arial";
-            ctx.fillText(`Date: ${dateStr}`, 30, 70);
-            ctx.font = "14px monospace";
+            ctx.font = "14px Courier New";
             workedPallets.forEach((p, i) => {
-                ctx.fillText(`${i+1}. [${p.time}] LOC: ${p.loc} - LPN: ${p.lpn}`, 30, 110 + (i * 25));
+                ctx.fillText(`${(i+1).toString().padStart(2,'0')}. [${p.time}] ${p.loc.padEnd(10)} ${p.lpn}`, 30, 100 + (i * 25));
             });
             const link = document.createElement('a');
-            link.download = `Report_${new Date().getTime()}.png`;
+            link.download = `KN_Report_${new Date().getTime()}.png`;
             link.href = canvas.toDataURL();
             link.click();
         }
+
+        render();
     </script>
 </body>
 </html>
