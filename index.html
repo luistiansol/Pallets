@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Pro v3 - KN</title>
+    <title>Picker Pro - Inventory Helper</title>
     <meta name="mobile-web-app-capable" content="yes">
     <style>
         :root {
@@ -14,6 +14,7 @@
             --warning: #ffd60a;
             --success: #30d158;
             --progress-bg: #333;
+            --navy: #002d72; /* Color elegante Navy Blue */
         }
         body { 
             font-family: -apple-system, system-ui, sans-serif;
@@ -91,7 +92,7 @@
             cursor: pointer;
         }
         #undo-btn { background: #333; color: white; display: none; }
-        #download-btn { background: var(--success); color: white; display: none; }
+        #download-btn { background: var(--navy); color: white; display: none; }
     </style>
 </head>
 <body>
@@ -111,13 +112,13 @@
 
     <div class="controls">
         <button id="undo-btn" onclick="undoDelete()">↩ Undo last pick</button>
-        <button id="download-btn" onclick="generateReport()">💾 Save Work Report</button>
+        <button id="download-btn" onclick="generateReport()">💾 Save Final Report</button>
     </div>
 
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // --- DATA SECTION: ESTO ES LO ÚNICO QUE CAMBIARÁ ---
+        // --- DATA SECTION: ACTUALIZA ESTO CON LA NUEVA IMAGEN ---
         let pallets = [
             { lpn: "LEC0000000113F", loc: "AN12F002" }, { lpn: "LEC0000000113M", loc: "AN12F003" },
             { lpn: "LEC0000000113O", loc: "AN14F001" }, { lpn: "LEC0000000113N", loc: "AN14F002" },
@@ -176,7 +177,7 @@
             const item = pallets[index];
             lastDeleted = { data: item, index: index };
             lastText.innerText = `${item.loc}`;
-            workedPallets.push({ ...item, time: new Date().toLocaleTimeString() });
+            workedPallets.push(item);
             pallets.splice(index, 1);
             undoBtn.style.display = 'block';
             render();
@@ -196,19 +197,48 @@
         function generateReport() {
             const canvas = document.getElementById('reportCanvas');
             const ctx = canvas.getContext('2d');
+            const endTimeStr = new Date().toLocaleString();
+            
             canvas.width = 500;
-            canvas.height = 130 + (workedPallets.length * 30);
+            const listHeight = workedPallets.length * 28;
+            canvas.height = 100 + listHeight + 60; 
+
+            // Fondo Blanco
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "black";
+            
+            // Título Reporte (Navy)
+            ctx.fillStyle = "#002d72";
             ctx.font = "bold 20px Arial";
-            ctx.fillText("INVENTORY REPORT - KUEHNE+NAGEL", 30, 40);
+            ctx.fillText("INVENTORY WORK REPORT", 30, 50);
+            
+            // Línea separadora
+            ctx.strokeStyle = "#002d72";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(30, 65);
+            ctx.lineTo(470, 65);
+            ctx.stroke();
+
+            // Lista de Pallets
+            ctx.fillStyle = "black";
             ctx.font = "14px Courier New";
             workedPallets.forEach((p, i) => {
-                ctx.fillText(`${(i+1).toString().padStart(2,'0')}. [${p.time}] ${p.loc.padEnd(10)} ${p.lpn}`, 30, 100 + (i * 25));
+                ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28));
             });
+
+            // PIE DE PÁGINA (NAVY BLUE)
+            const footerY = canvas.height - 60;
+            ctx.fillStyle = "#002d72";
+            ctx.fillRect(0, footerY, canvas.width, 60);
+
+            // Texto Fecha y Hora (Blanco)
+            ctx.fillStyle = "white";
+            ctx.font = "italic 14px Arial";
+            ctx.fillText(`Completion Date & Time: ${endTimeStr}`, 30, footerY + 35);
+
             const link = document.createElement('a');
-            link.download = `KN_Report_${new Date().getTime()}.png`;
+            link.download = `Work_Report_${new Date().getTime()}.png`;
             link.href = canvas.toDataURL();
             link.click();
         }
