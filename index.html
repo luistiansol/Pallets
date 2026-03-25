@@ -3,100 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Helper v11 - Grouped UI</title>
+    <title>Picker Pro PWA</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#002d72">
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Picker Pro","short_name":"Picker","start_url":".","display":"standalone","background_color":"#000","theme_color":"#002d72","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2312/2312701.png","sizes":"512x512","type":"image/png"}]}'>
+
     <style>
         :root {
-            --bg: #000000;
-            --card: #1c1c1e;
-            --text: #ffffff;
-            --accent: #0a84ff;
-            --warning: #ffd60a;
-            --success: #30d158;
-            --undo: #ff453a;
+            --bg: #000; --card: #1c1c1e; --text: #fff; --accent: #0a84ff;
+            --warning: #ffd60a; --success: #30d158; --undo: #ff453a;
         }
-        body { 
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0 0 80px 0;
-            overscroll-behavior: none;
-        }
-
-        /* CABECERA AGRUPADA */
-        .header { 
-            position: sticky; 
-            top: 0; 
-            background: #111;
-            padding: 12px 12px 8px 12px;
-            border-bottom: 1px solid #333;
-            z-index: 100;
-        }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; overscroll-behavior: none; }
         
-        /* Fila 1: Pending y Undo */
-        .row-1 {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .row-1 span { font-size: 1rem; font-weight: bold; }
-        #count { color: var(--accent); }
-
-        #undo-btn { 
-            background-color: var(--undo);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            display: none;
-            cursor: pointer;
-        }
-
-        /* Fila 2: Last Action */
-        .row-2 {
-            font-size: 0.9rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        #last-text { color: var(--success); }
-
-        /* Fila 3: Barra de progreso como separador */
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background-color: #333;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        #progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--success);
-            transition: width 0.4s ease;
-        }
-
-        /* LISTA */
-        .list-container { 
-            padding: 10px 5px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        /* Cabecera Agrupada (v12) */
+        .header { position: sticky; top: 0; background: #111; padding: 12px; border-bottom: 1px solid #333; z-index: 100; }
+        .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        #undo-btn { background: var(--undo); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; display: none; cursor: pointer; }
+        .row-2 { font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; }
+        .progress-container { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 100%; background: var(--success); transition: 0.4s; }
         
-        .pallet-card {
-            background-color: var(--card);
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-        }
-        .pallet-card:active { background-color: #333; }
+        /* Lista de Pallets */
+        .list-container { padding: 10px 5px; display: flex; flex-direction: column; gap: 8px; }
+        .pallet-card { background: var(--card); border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; }
         .loc { font-weight: bold; font-size: 1.8rem; color: var(--warning); margin: 0; }
         .lpn { font-size: 0.8rem; opacity: 0.6; margin-top: 5px; font-family: monospace; }
         
+        /* Botón Reporte Navy */
         .footer-btn { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 200; }
         #download-btn { width: 100%; padding: 15px; border-radius: 30px; border: none; background: #002d72; color: white; font-weight: bold; display: none; }
     </style>
@@ -105,58 +40,56 @@
 
     <div class="header">
         <div class="row-1">
-            <span>Pending: <span id="count">0</span></span>
+            <span>Pending: <span id="count" style="color:var(--accent)">0</span></span>
             <button id="undo-btn" onclick="undoDelete()">UNDO</button>
         </div>
-        <div class="row-2">
-            Last: <span id="last-text">None</span>
-        </div>
-        <div class="progress-container">
-            <div id="progress-bar"></div>
-        </div>
+        <div class="row-2">Last: <span id="last-text" style="color:var(--success)">None</span></div>
+        <div class="progress-container"><div id="progress-bar"></div></div>
     </div>
 
     <div id="pallet-list" class="list-container"></div>
 
     <div class="footer-btn">
-        <button id="download-btn" onclick="generateReport()">💾 SAVE REPORT</button>
+        <button id="download-btn" onclick="generateReport()">💾 SAVE FINAL REPORT</button>
     </div>
 
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        let pallets = [
-            { lpn: "LEC0000000113C", loc: "AQ11D002" }, { lpn: "LEC0000000113G", loc: "AQ11D003" },
-            { lpn: "LEC0000000113E", loc: "AQ11C002" }, { lpn: "LEC00000001131", loc: "AN16D001" },
-            { lpn: "LEC0000000112Y", loc: "AQ15C003" }, { lpn: "LEC0000000113V", loc: "AQ11F002" },
-            { lpn: "LEC0000000113H", loc: "AQ13F001" }, { lpn: "LEC0000000113J", loc: "AQ13F003" },
-            { lpn: "LEC00000001134", loc: "AQ15B002" }, { lpn: "LEC0000000113K", loc: "AQ13F002" },
-            { lpn: "LEC0000000113P", loc: "AQ11F001" }, { lpn: "LEC00000001137", loc: "AO37A003" },
-            { lpn: "LEC0000000113X", loc: "AQ11A003" }, { lpn: "LEC00000001139", loc: "AQ13D001" },
-            { lpn: "LEC0000000112S", loc: "AO37B003" }, { lpn: "LEC0000000113I", loc: "AQ13C001" },
-            { lpn: "LEC0000000112Q", loc: "AO37B001" }, { lpn: "LEC0000000112O", loc: "AO37B002" },
-            { lpn: "LEC0000000113Z", loc: "AP29D001" }, { lpn: "LEC0000000113L", loc: "AQ13B003" },
-            { lpn: "LEC0000000112V", loc: "AN14F003" }, { lpn: "LEC0000000112L", loc: "AN16C001" },
-            { lpn: "LEC0000000113M", loc: "AN12F003" }, { lpn: "LEC0000000113N", loc: "AN14F002" },
-            { lpn: "LEC0000000113O", loc: "AN14F001" }, { lpn: "LEC0000000113F", loc: "AN12F002" }
+        // --- REGISTRO DE SERVICE WORKER (PWA) ---
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE = 'picker-v14';
+                self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.add('./'))));
+                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+            `;
+            const blob = new Blob([swCode], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob));
+        }
+
+        // --- DATOS DEL TRABAJO ---
+        const masterList = [
+            { lpn: "LEC000000011JK", loc: "AN24F003" }, { lpn: "LEC000000011JU", loc: "AN26B003" },
+            { lpn: "LEC000000011JS", loc: "AN26C001" }, { lpn: "LEC000000011JV", loc: "AN26F002" },
+            { lpn: "LEC000000011JR", loc: "AQ25B002" }, { lpn: "LEC000000011JN", loc: "AQ25D001" },
+            { lpn: "LEC000000011JT", loc: "AQ25F001" }, { lpn: "LEC000000011JM", loc: "AQ25F002" },
+            { lpn: "LEC000000011JD", loc: "AR59A001" }, { lpn: "LEC000000011JA", loc: "AR59A002" },
+            { lpn: "LEC000000011JQ", loc: "AR59A003" }, { lpn: "LEC000000011JE", loc: "AR61B002" },
+            { lpn: "LEC000000011JP", loc: "AR61D003" }, { lpn: "LEC000000011JG", loc: "AR65B003" },
+            { lpn: "LEC000000011JL", loc: "AR65C001" }, { lpn: "LEC000000011JC", loc: "AR65C002" },
+            { lpn: "LEC000000011JW", loc: "AR65C003" }, { lpn: "LEC000000011JO", loc: "AR67D003" }
         ].sort((a, b) => a.loc.localeCompare(b.loc));
 
-        const totalInitial = pallets.length;
-        let workedPallets = []; 
-        let lastDeleted = null;
-
-        const listDiv = document.getElementById('pallet-list');
-        const countSpan = document.getElementById('count');
-        const lastText = document.getElementById('last-text');
-        const undoBtn = document.getElementById('undo-btn');
-        const downloadBtn = document.getElementById('download-btn');
-        const progressBar = document.getElementById('progress-bar');
+        let pallets = [...masterList];
+        const totalInit = pallets.length;
+        let worked = []; let lastDeleted = null;
 
         function render() {
+            const listDiv = document.getElementById('pallet-list');
             listDiv.innerHTML = '';
-            countSpan.innerText = pallets.length;
-            progressBar.style.width = ((workedPallets.length / totalInitial) * 100) + '%';
-            downloadBtn.style.display = (pallets.length === 0) ? 'block' : 'none';
+            document.getElementById('count').innerText = pallets.length;
+            document.getElementById('progress-bar').style.width = ((worked.length / totalInit) * 100) + '%';
+            document.getElementById('download-btn').style.display = pallets.length === 0 ? 'block' : 'none';
 
             pallets.forEach((item, index) => {
                 const card = document.createElement('div');
@@ -164,10 +97,9 @@
                 card.innerHTML = `<div class="loc">${item.loc}</div><div class="lpn">${item.lpn}</div>`;
                 card.onclick = () => {
                     lastDeleted = { data: pallets[index], index: index };
-                    lastText.innerText = item.loc;
-                    workedPallets.push(item);
-                    pallets.splice(index, 1);
-                    undoBtn.style.display = 'block';
+                    document.getElementById('last-text').innerText = item.loc;
+                    worked.push(item); pallets.splice(index, 1);
+                    document.getElementById('undo-btn').style.display = 'block';
                     render();
                 };
                 listDiv.appendChild(card);
@@ -177,27 +109,24 @@
         function undoDelete() {
             if (lastDeleted) {
                 pallets.splice(lastDeleted.index, 0, lastDeleted.data);
-                workedPallets.pop();
-                lastDeleted = null;
-                undoBtn.style.display = 'none';
-                lastText.innerText = workedPallets.length > 0 ? workedPallets[workedPallets.length-1].loc : "None";
+                worked.pop(); lastDeleted = null;
+                document.getElementById('undo-btn').style.display = 'none';
+                document.getElementById('last-text').innerText = worked.length > 0 ? worked[worked.length-1].loc : "None";
                 render();
             }
         }
 
         function generateReport() {
-            const canvas = document.getElementById('reportCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 500; canvas.height = 150 + (workedPallets.length * 30);
+            const canvas = document.getElementById('reportCanvas'); const ctx = canvas.getContext('2d');
+            canvas.width = 500; canvas.height = 150 + (worked.length * 28);
             ctx.fillStyle = "white"; ctx.fillRect(0,0,500,canvas.height);
             ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial"; ctx.fillText("INVENTORY WORK REPORT", 30, 40);
             ctx.fillStyle = "black"; ctx.font = "14px Courier";
-            workedPallets.forEach((p, i) => ctx.fillText(`${i+1}. LOC: ${p.loc} | LPN: ${p.lpn}`, 30, 80 + (i*28)));
-            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-60, 500, 60);
-            ctx.fillStyle = "white"; ctx.fillText("Completed: " + new Date().toLocaleString(), 30, canvas.height-25);
+            worked.forEach((p, i) => ctx.fillText(`${i+1}. LOC: ${p.loc} | LPN: ${p.lpn}`, 30, 80 + (i*28)));
+            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-50, 500, 50);
+            ctx.fillStyle = "white"; ctx.fillText("Completed: " + new Date().toLocaleString(), 30, canvas.height-20);
             const link = document.createElement('a'); link.download = 'Report.png'; link.href = canvas.toDataURL(); link.click();
         }
-
         render();
     </script>
 </body>
