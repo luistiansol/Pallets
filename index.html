@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Picker Pro Sync - v5</title>
+    <title>Picker Pro Sync - v5.1</title>
     <meta name="mobile-web-app-capable" content="yes">
     <style>
         :root {
@@ -21,7 +21,7 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 0 10px 130px 10px;
+            padding: 0 10px 140px 10px;
             overscroll-behavior: none;
         }
         .header { 
@@ -93,11 +93,10 @@
         #reset-btn { 
             background: #ff3b30; 
             color: white; 
-            font-size: 0.7rem; 
-            padding: 8px; 
+            font-size: 0.75rem; 
+            padding: 10px; 
             border-radius: 20px; 
             margin-top: 5px;
-            opacity: 0.6;
         }
     </style>
 </head>
@@ -121,8 +120,8 @@
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        const STORAGE_KEY = 'kn_pallets_work';
-        const WORKED_KEY = 'kn_pallets_done';
+        const STORAGE_KEY = 'kn_pallets_work_v5';
+        const WORKED_KEY = 'kn_pallets_done_v5';
 
         // LISTA DE LA ÚLTIMA IMAGEN
         const masterList = [
@@ -192,8 +191,9 @@
         }
 
         function resetAll() {
-            if(confirm("⚠️ ¿Iniciar nuevo trabajo? Se borrará el progreso guardado.")) {
-                localStorage.clear();
+            if(confirm("⚠️ ¿Deseas cargar la lista nueva y borrar el progreso anterior?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(WORKED_KEY);
                 location.reload();
             }
         }
@@ -203,3 +203,24 @@
             const ctx = canvas.getContext('2d');
             const endTimeStr = new Date().toLocaleString();
             canvas.width = 500;
+            canvas.height = 160 + (workedPallets.length * 28);
+            ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial";
+            ctx.fillText("INVENTORY WORK REPORT", 30, 50);
+            ctx.fillStyle = "black"; ctx.font = "14px Courier New";
+            workedPallets.forEach((p, i) => {
+                ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28));
+            });
+            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial";
+            ctx.fillText(`Completion Date & Time: ${endTimeStr}`, 30, canvas.height - 25);
+            const link = document.createElement('a');
+            link.download = `Work_Report.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        render();
+    </script>
+</body>
+</html>
