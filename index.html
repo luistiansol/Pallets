@@ -112,4 +112,18 @@
         }
 
         function generateReport() {
-            const canvas = document.getElementById('reportCanvas'); const ctx = canvas
+            const canvas = document.getElementById('reportCanvas'); const ctx = canvas.getContext('2d');
+            const dateStr = new Date().toLocaleString();
+            canvas.width = 500; canvas.height = 130 + (worked.length * 28);
+            ctx.fillStyle = "white"; ctx.fillRect(0,0,500,canvas.height);
+            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial"; ctx.fillText("INVENTORY WORK REPORT", 30, 40);
+            ctx.fillStyle = "black"; ctx.font = "14px Courier New";
+            worked.forEach((p, i) => ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28)));
+            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-60, 500, 60);
+            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial"; ctx.fillText(`Completion Date & Time: ${dateStr}`, 30, canvas.height-25);
+            const link = document.createElement('a'); link.download = 'Work_Report.png'; link.href = canvas.toDataURL(); link.click();
+        }
+        render();
+    </script>
+</body>
+</html>
