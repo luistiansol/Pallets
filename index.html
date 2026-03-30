@@ -5,27 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Picker Pro - Luis Reversing</title>
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#002d72">
-    
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Picker Pro","short_name":"Picker","start_url":".","display":"standalone","background_color":"#000","theme_color":"#002d72","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2312/2312701.png","sizes":"512x512","type":"image/png"}]}'>
-
     <style>
         :root {
             --bg: #000; --card: #1c1c1e; --text: #fff; --accent: #0a84ff;
             --warning: #ffd60a; --success: #30d158; --undo: #ff453a;
         }
         body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; overscroll-behavior: none; }
+        
+        /* CABECERA AGRUPADA DEFINITIVA */
         .header { position: sticky; top: 0; background: #111; padding: 12px; border-bottom: 1px solid #333; z-index: 100; }
         .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         #undo-btn { background: var(--undo); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; display: none; cursor: pointer; }
         .row-2 { font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; }
         .progress-container { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
         #progress-bar { width: 0%; height: 100%; background: var(--success); transition: 0.4s; }
+        
+        /* LISTA CON LOCATIONS GRANDES */
         .list-container { padding: 10px 5px; display: flex; flex-direction: column; gap: 8px; }
         .pallet-card { background: var(--card); border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; }
         .loc { font-weight: bold; font-size: 1.8rem; color: var(--warning); margin: 0; }
         .lpn { font-size: 0.8rem; opacity: 0.6; margin-top: 5px; font-family: monospace; }
+        
+        /* BOTÓN REPORTE NAVY */
         .footer-btn { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 200; }
         #download-btn { width: 100%; padding: 15px; border-radius: 30px; border: none; background: #002d72; color: white; font-weight: bold; display: none; }
     </style>
@@ -50,18 +51,7 @@
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // --- SERVICE WORKER (PWA) ---
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                const CACHE = 'picker-v14.1';
-                self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.add('./'))));
-                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
-            `;
-            const blob = new Blob([swCode], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob));
-        }
-
-        // --- DATOS PROCESADOS (ORDENADOS A-Z) ---
+        // DATOS PROCESADOS (19 PALLETS)
         const masterList = [
             { lpn: "LEC00000001ES0", loc: "AY48B002" }, { lpn: "LEC0000000SC2", loc: "AZ50A003" },
             { lpn: "LEC0000000SCE", loc: "AZ50B002" }, { lpn: "LEC0000000SCA", loc: "AZ50B003" },
