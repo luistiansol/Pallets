@@ -12,7 +12,6 @@
         }
         body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; overscroll-behavior: none; }
         
-        /* CABECERA AGRUPADA OFICIAL v12 */
         .header { position: sticky; top: 0; background: #111; padding: 12px; border-bottom: 1px solid #333; z-index: 100; }
         .row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         #undo-btn { background: var(--undo); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; display: none; cursor: pointer; }
@@ -20,13 +19,11 @@
         .progress-container { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
         #progress-bar { width: 0%; height: 100%; background: var(--success); transition: 0.4s; }
         
-        /* LISTA CON LOCATIONS GRANDES AMARILLAS */
         .list-container { padding: 10px 5px; display: flex; flex-direction: column; gap: 8px; }
         .pallet-card { background: var(--card); border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; }
         .loc { font-weight: bold; font-size: 1.8rem; color: var(--warning); margin: 0; }
         .lpn { font-size: 0.8rem; opacity: 0.6; margin-top: 5px; font-family: monospace; }
         
-        /* BOTÓN REPORTE NAVY BLUE */
         .footer-btn { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 200; }
         #download-btn { width: 100%; padding: 15px; border-radius: 30px; border: none; background: #002d72; color: white; font-weight: bold; display: none; }
     </style>
@@ -51,7 +48,7 @@
     <canvas id="reportCanvas" style="display:none;"></canvas>
 
     <script>
-        // DATOS PROCESADOS (ORDENADOS A-Z POR LOCATION)
+        // LISTA DE DATOS (7 PALLETS EXTRAÍDOS)
         const masterList = [
             { lpn: "LEC000000017HZ", loc: "AX60F001" },
             { lpn: "LEC000000017I2", loc: "AX60F003" },
@@ -60,18 +57,29 @@
             { lpn: "LEC000000017I4", loc: "BA59F001" },
             { lpn: "LEC000000017I6", loc: "BA61F002" },
             { lpn: "LEC000000017IF", loc: "BB26A002" }
-        ];
+        ].sort((a, b) => a.loc.localeCompare(b.loc));
 
         let pallets = [...masterList];
         const totalInit = pallets.length;
-        let worked = []; let lastDeleted = null;
+        let worked = []; 
+        let lastDeleted = null;
+
+        const listDiv = document.getElementById('pallet-list');
+        const countSpan = document.getElementById('count');
+        const lastText = document.getElementById('last-text');
+        const undoBtn = document.getElementById('undo-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const progressBar = document.getElementById('progress-bar');
 
         function render() {
-            const listDiv = document.getElementById('pallet-list');
             listDiv.innerHTML = '';
-            document.getElementById('count').innerText = pallets.length;
-            document.getElementById('progress-bar').style.width = ((worked.length / totalInit) * 100) + '%';
-            document.getElementById('download-btn').style.display = pallets.length === 0 ? 'block' : 'none';
+            countSpan.innerText = pallets.length;
+            
+            // Cálculo de progreso seguro
+            const progress = totalInit > 0 ? (worked.length / totalInit) * 100 : 0;
+            progressBar.style.width = progress + '%';
+            
+            downloadBtn.style.display = (pallets.length === 0 && worked.length > 0) ? 'block' : 'none';
 
             pallets.forEach((item, index) => {
                 const card = document.createElement('div');
@@ -79,9 +87,10 @@
                 card.innerHTML = `<div class="loc">${item.loc}</div><div class="lpn">${item.lpn}</div>`;
                 card.onclick = () => {
                     lastDeleted = { data: pallets[index], index: index };
-                    document.getElementById('last-text').innerText = item.loc;
-                    worked.push(item); pallets.splice(index, 1);
-                    document.getElementById('undo-btn').style.display = 'block';
+                    lastText.innerText = item.loc;
+                    worked.push(item);
+                    pallets.splice(index, 1);
+                    undoBtn.style.display = 'block';
                     render();
                 };
                 listDiv.appendChild(card);
@@ -91,15 +100,30 @@
         function undoDelete() {
             if (lastDeleted) {
                 pallets.splice(lastDeleted.index, 0, lastDeleted.data);
-                worked.pop(); lastDeleted = null;
-                document.getElementById('undo-btn').style.display = 'none';
-                document.getElementById('last-text').innerText = worked.length > 0 ? worked[worked.length-1].loc : "None";
+                worked.pop();
+                lastDeleted = null;
+                undoBtn.style.display = 'none';
+                lastText.innerText = worked.length > 0 ? worked[worked.length-1].loc : "None";
                 render();
             }
         }
 
         function generateReport() {
-            const canvas = document.getElementById('reportCanvas'); const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById('reportCanvas');
+            const ctx = canvas.getContext('2d');
             const dateStr = new Date().toLocaleString();
-            canvas.width = 500; canvas.height = 130 + (worked.length * 28);
-            ctx.fillStyle = "white"; ctx.fillRect(0,0,5
+            canvas.width = 500; canvas.height = 130 + (worked.length * 30);
+            ctx.fillStyle = "white"; ctx.fillRect(0,0,500,canvas.height);
+            ctx.fillStyle = "#002d72"; ctx.font = "bold 20px Arial"; ctx.fillText("INVENTORY WORK REPORT", 30, 50);
+            ctx.fillStyle = "black"; ctx.font = "14px Courier New";
+            worked.forEach((p, i) => ctx.fillText(`${(i+1).toString().padStart(2,'0')}. LOC: ${p.loc.padEnd(10)} | LPN: ${p.lpn}`, 30, 100 + (i * 28)));
+            ctx.fillStyle = "#002d72"; ctx.fillRect(0, canvas.height-60, 500, 60);
+            ctx.fillStyle = "white"; ctx.font = "italic 14px Arial"; ctx.fillText(`Completion: ${dateStr}`, 30, canvas.height-25);
+            const link = document.createElement('a'); link.download = 'Work_Report.png'; link.href = canvas.toDataURL(); link.click();
+        }
+
+        // Ejecutar render al cargar
+        window.onload = render;
+    </script>
+</body>
+</html>
